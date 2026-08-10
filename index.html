@@ -1,205 +1,387 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="scroll-smooth">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ropten Clean | Limpieza Total de Tenis y Ropa en Atlixco</title>
+  <title>Ropten Clean | Experiencia Interactiva 3D</title>
 
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <!-- Google Font: Poppins -->
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Google Fonts: Space Grotesk & Poppins -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=Space+Grotesk:wght@500;700;800&display=swap" rel="stylesheet">
+  <!-- Three.js CDN para Efectos y Objetos 3D -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
   <style>
-    body { font-family: 'Poppins', sans-serif; }
-    .bg-navy-main { background-color: #0b1526; }
-    .bg-navy-card { background-color: #132238; }
-    .border-navy { border-color: #1e365d; }
-    .whatsapp-pulse {
-      animation: pulse 2s infinite;
+    body { 
+      font-family: 'Poppins', sans-serif; 
+      background-color: #030712;
+      color: #f3f4f6;
+      overflow-x: hidden;
     }
-    @keyframes pulse {
-      0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.7); }
-      70% { transform: scale(1.05); box-shadow: 0 0 0 15px rgba(37, 211, 102, 0); }
-      100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(37, 211, 102, 0); }
+    .font-tech { font-family: 'Space Grotesk', sans-serif; }
+    
+    /* ESTILOS GLASSMORPHISM */
+    .glass-panel {
+      background: rgba(15, 23, 42, 0.7);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid rgba(59, 130, 246, 0.25);
     }
-    .btn-interactivo {
-      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    .glass-panel:hover {
+      border-color: rgba(59, 130, 246, 0.6);
+      box-shadow: 0 0 30px rgba(59, 130, 246, 0.2);
     }
-    .btn-interactivo:active {
-      transform: scale(0.96);
+    .glow-text {
+      text-shadow: 0 0 20px rgba(59, 130, 246, 0.7);
+    }
+    .btn-3d {
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .btn-3d:hover {
+      transform: translateY(-3px) scale(1.02);
+      box-shadow: 0 12px 25px -5px rgba(37, 211, 102, 0.4);
+    }
+    .btn-3d:active {
+      transform: translateY(1px) scale(0.98);
+    }
+    .whatsapp-float {
+      animation: floatPulse 2.5s infinite ease-in-out;
+    }
+    @keyframes floatPulse {
+      0%, 100% { transform: translateY(0) scale(1); box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.7); }
+      50% { transform: translateY(-6px) scale(1.05); box-shadow: 0 10px 20px 5px rgba(37, 211, 102, 0.35); }
+    }
+
+    /* SLIDER ANTES / DESPUÉS INTERACTIVO */
+    .ba-container {
+      position: relative;
+      overflow: hidden;
+      border-radius: 1.5rem;
+      user-select: none;
+    }
+    .ba-after {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 50%;
+      overflow: hidden;
+      border-right: 3px solid #38bdf8;
+      box-shadow: 5px 0 15px rgba(56, 189, 248, 0.5);
+    }
+
+    /* EFECTO DE LUZ Y BRILLO DE LIMPIEZA */
+    @keyframes shine {
+      0% { transform: translateX(-100%) rotate(45deg); }
+      100% { transform: translateX(200%) rotate(45deg); }
+    }
+    .shine-effect::after {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: linear-gradient(60deg, transparent, rgba(255, 255, 255, 0.25), transparent);
+      transform: rotate(45deg);
+      animation: shine 4s infinite;
     }
   </style>
 </head>
-<body class="bg-navy-main text-slate-100 min-h-screen selection:bg-blue-600 selection:text-white">
+<body class="relative min-h-screen selection:bg-blue-500 selection:text-white">
 
-  <!-- BARRA DE NAVEGACIÓN -->
-  <header class="sticky top-0 z-40 bg-[#0b1526]/95 backdrop-blur-md border-b border-navy px-4 py-3">
-    <div class="max-w-5xl mx-auto flex justify-between items-center">
-      <!-- LOGO / BRANDING -->
+  <!-- CANVAS 3D DE FONDO INTERACTIVO (ESPUMA, BURBUJAS Y ONDAS ULTRASÓNICAS) -->
+  <canvas id="canvas-3d" class="fixed top-0 left-0 w-full h-full -z-10 pointer-events-none"></canvas>
+
+  <!-- ENCABEZADO GLASSMORPHISM -->
+  <header class="sticky top-0 z-50 glass-panel border-b border-slate-800 px-4 py-3.5">
+    <div class="max-w-6xl mx-auto flex justify-between items-center">
+      <!-- LOGO -->
       <div class="flex items-center space-x-3">
-        <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg shadow-blue-600/30">
-          <i class="fa-solid fa-soap"></i>
+        <div class="w-10 h-10 bg-gradient-to-tr from-blue-600 to-teal-400 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg shadow-blue-500/30">
+          <i class="fa-solid fa-sparkles"></i>
         </div>
         <div>
-          <span class="text-xl font-extrabold tracking-tight text-white block leading-none">Ropten <span class="text-blue-400">Clean</span></span>
-          <span class="text-[10px] text-slate-400 font-medium tracking-widest uppercase block mt-0.5">Limpieza Total</span>
+          <span class="font-tech text-2xl font-extrabold tracking-tight text-white block leading-none">ROPTEN <span class="text-blue-400 glow-text">CLEAN</span></span>
+          <span class="text-[9px] text-teal-400 font-bold tracking-widest uppercase block mt-1">Laboratorio de Lavado & Sneaker Care</span>
         </div>
       </div>
 
-      <!-- BOTÓN LLAMADA DIRECTA -->
-      <button onclick="enviarWhatsApp('Información General de Servicios')" 
-              class="btn-interactivo bg-green-500 hover:bg-green-600 text-slate-950 font-bold px-4 py-2 rounded-full text-xs sm:text-sm shadow-lg shadow-green-500/20 flex items-center">
-        <i class="fa-brands fa-whatsapp text-base mr-1.5"></i> 244 315 3421
+      <!-- BOTÓN WHATSAPP HEADER -->
+      <button onclick="enviarWhatsApp('Información General')" 
+              class="btn-3d bg-green-500 hover:bg-green-400 text-slate-950 font-bold px-4 py-2 rounded-full text-xs sm:text-sm flex items-center shadow-lg shadow-green-500/20">
+        <i class="fa-brands fa-whatsapp text-lg mr-2"></i> 244 315 3421
       </button>
     </div>
   </header>
 
-  <!-- HERO SECTION / PRESENTACIÓN PRINCIPAL -->
-  <section class="relative py-12 sm:py-16 px-4 border-b border-navy overflow-hidden">
+  <!-- HERO SECTION -->
+  <section class="relative py-12 sm:py-20 px-4 overflow-hidden">
     <div class="max-w-4xl mx-auto text-center relative z-10">
       
-      <span class="inline-flex items-center bg-blue-500/10 text-blue-400 text-xs font-semibold px-3 py-1.5 rounded-full border border-blue-500/20 mb-4">
-        <i class="fa-solid fa-bolt text-yellow-400 mr-2"></i> Lavandería de Ropa & Especialistas en Tenis Exo7™
-      </span>
+      <div class="inline-flex items-center bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs font-mono px-4 py-1.5 rounded-full mb-6 backdrop-blur-md">
+        <span class="w-2 h-2 bg-green-400 rounded-full animate-ping mr-2"></span>
+        TECNOLOGÍA ROPTEN CLEAN EN ATLIXCO
+      </div>
 
-      <h1 class="text-3xl sm:text-5xl font-extrabold text-white leading-tight mb-4">
-        Tu ropa impecable y tus tenis <span class="text-blue-400">como nuevos</span>.
+      <h1 class="font-tech text-4xl sm:text-6xl font-black text-white leading-none tracking-tight mb-6">
+        RENOVAMOS TUS TENIS.<br>
+        <span class="bg-gradient-to-r from-blue-400 via-teal-300 to-indigo-400 bg-clip-text text-transparent glow-text">IMPECAMOS TU ROPA.</span>
       </h1>
 
-      <p class="text-slate-300 text-sm sm:text-base mb-8 max-w-2xl mx-auto font-normal">
-        En <strong>Ropten Clean</strong> nos encargamos del cuidado total de tu guardarropa y calzado. Servicio profesional, rápido e higiénico en Atlixco.
+      <p class="text-slate-300 text-base sm:text-lg mb-8 max-w-2xl mx-auto font-light leading-relaxed">
+        Restauración profesional de calzado, ropa y edredones en Atlixco. Desinfección UV-C, tratamiento de manchas y acabado impecable.
       </p>
 
-      <!-- BOTONES DE ACCIÓN RÁPIDA -->
-      <div class="flex flex-col sm:flex-row justify-center gap-3 max-w-md mx-auto">
-        <button onclick="enviarWhatsApp('Cotización para Limpieza de Tenis')" 
-                class="btn-interactivo bg-blue-600 hover:bg-blue-500 text-white font-bold py-3.5 px-6 rounded-xl text-sm shadow-lg shadow-blue-600/30 flex items-center justify-center">
-          <i class="fa-solid fa-shoe-prints mr-2"></i> Cotizar Tenis
+      <!-- BOTONES DE ACCIÓN -->
+      <div class="flex flex-col sm:flex-row justify-center gap-4 max-w-md mx-auto mb-10">
+        <button onclick="enviarWhatsApp('Cotización de Limpieza de Tenis')" 
+                class="btn-3d bg-gradient-to-r from-blue-600 to-teal-500 text-white font-bold py-4 px-8 rounded-2xl text-sm shadow-xl shadow-blue-500/25 flex items-center justify-center">
+          <i class="fa-solid fa-shoe-prints mr-2.5 text-lg"></i> Cotizar Tenis
         </button>
-        <button onclick="enviarWhatsApp('Información sobre Lavado de Ropa por Kilo')" 
-                class="btn-interactivo bg-navy-card hover:bg-slate-800 text-slate-200 border border-navy font-bold py-3.5 px-6 rounded-xl text-sm flex items-center justify-center">
-          <i class="fa-solid fa-shirt mr-2"></i> Lavandería por Kilo
+        <button onclick="enviarWhatsApp('Servicio de Lavandería por Kilo')" 
+                class="btn-3d glass-panel text-white font-bold py-4 px-8 rounded-2xl text-sm flex items-center justify-center hover:bg-slate-800/80">
+          <i class="fa-solid fa-shirt mr-2.5 text-lg text-teal-400"></i> Lavandería por Kilo
         </button>
       </div>
 
     </div>
   </section>
 
-  <!-- LISTA DE PRECIOS INTERACTIVOS -->
-  <section class="py-12 px-4 max-w-5xl mx-auto">
+  <!-- 🚀 NUEVA SECCIÓN INTERACTIVA: SIMULADOR DE LIMPIEZA Y RESTAURACIÓN -->
+  <section class="py-8 px-4 max-w-5xl mx-auto relative z-10">
+    <div class="glass-panel p-6 sm:p-10 rounded-3xl border border-blue-500/30 relative overflow-hidden">
+      
+      <div class="text-center mb-8">
+        <span class="text-teal-400 font-mono text-xs font-bold uppercase tracking-widest block mb-1">INTERACTIVIDAD 3D</span>
+        <h2 class="font-tech text-2xl sm:text-4xl font-extrabold text-white">SIMULADOR DE LIMPIEZA ROPTEN</h2>
+        <p class="text-slate-400 text-xs sm:text-sm mt-2">Desliza o activa la simulación para ver la transformación de sucios a impecables</p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+        
+        <!-- 1. SLIDER COMPARATIVO DE TENIS Y ROPA (DESLIZABLE) -->
+        <div class="space-y-3">
+          <h3 class="text-center text-xs font-bold text-slate-300 font-tech uppercase tracking-wider mb-2">
+            <i class="fa-solid fa-sliders text-blue-400 mr-2"></i>Desliza la barra central
+          </h3>
+
+          <div id="slider-container" class="ba-container glass-panel h-64 sm:h-72 w-full relative cursor-ew-resize border border-slate-700">
+            
+            <!-- CAPA 1: SUCIOS / ANTES -->
+            <div class="absolute inset-0 bg-slate-900 flex flex-col items-center justify-center p-6 text-center">
+              <div class="relative opacity-60 filter brightness-75 contrast-125 grayscale-[40%]">
+                <i class="fa-solid fa-shoe-prints text-7xl sm:text-8xl text-amber-800/80"></i>
+                <i class="fa-solid fa-virus text-2xl text-amber-700 absolute -top-2 -right-2 animate-bounce"></i>
+                <i class="fa-solid fa-smog text-3xl text-amber-900 absolute bottom-0 -left-4"></i>
+              </div>
+              <span class="bg-amber-950/80 text-amber-400 text-[10px] font-bold px-3 py-1 rounded-full border border-amber-800/50 mt-4 uppercase">
+                Antes: Polvo, Manchas y Microbios
+              </span>
+            </div>
+
+            <!-- CAPA 2: IMPECADOS / DESPUÉS (SE CORTA CON EL SLIDER) -->
+            <div id="ba-after-layer" class="ba-after bg-gradient-to-br from-slate-950 via-blue-950 to-slate-900 flex flex-col items-center justify-center p-6 text-center shine-effect">
+              <div class="relative w-full flex flex-col items-center">
+                <i class="fa-solid fa-shoe-prints text-7xl sm:text-8xl text-teal-300 glow-text"></i>
+                <i class="fa-solid fa-wand-magic-sparkles text-2xl text-yellow-300 absolute -top-3 -right-2 animate-pulse"></i>
+              </div>
+              <span class="bg-teal-950/90 text-teal-300 text-[10px] font-bold px-3 py-1 rounded-full border border-teal-500/50 mt-4 uppercase whitespace-nowrap">
+                ¡Después: Ropten Clean Impecable!
+              </span>
+            </div>
+
+            <!-- MANIJA DEL SLIDER -->
+            <div id="ba-handle" class="absolute top-0 bottom-0 w-1 bg-teal-400 z-20 flex items-center justify-center" style="left: 50%;">
+              <div class="w-8 h-8 bg-teal-400 text-slate-950 rounded-full flex items-center justify-center shadow-lg font-bold text-xs">
+                <i class="fa-solid fa-arrows-left-right"></i>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- 2. CICLO INTERACTIVO DE LAVADO EN TIEMPO REAL -->
+        <div class="glass-panel p-6 rounded-2xl border border-slate-800 space-y-6">
+          <div class="flex items-center justify-between">
+            <h4 class="font-tech text-lg font-bold text-white flex items-center">
+              <i class="fa-solid fa-microchip text-teal-400 mr-2.5"></i>Proceso de Restauración
+            </h4>
+            <span id="status-badge" class="text-[10px] font-mono px-2.5 py-1 rounded-md bg-slate-800 text-slate-400">EN ESPERA</span>
+          </div>
+
+          <!-- BARRA DE PROGRESO DE LIMPIEZA -->
+          <div>
+            <div class="flex justify-between text-xs text-slate-400 mb-2 font-mono">
+              <span id="step-label">Presiona 'Iniciar Limpieza'</span>
+              <span id="step-percent">0%</span>
+            </div>
+            <div class="w-full bg-slate-950 rounded-full h-3 p-0.5 border border-slate-800 overflow-hidden">
+              <div id="clean-progress" class="bg-gradient-to-r from-blue-500 via-teal-400 to-green-400 h-full rounded-full w-0 transition-all duration-300"></div>
+            </div>
+          </div>
+
+          <!-- DETALLES TÉCNICOS DEL PASO ACTUAL -->
+          <div id="step-description" class="bg-slate-950/60 p-4 rounded-xl border border-slate-800 text-xs text-slate-300 min-h-[70px] flex items-center">
+            <i class="fa-solid fa-circle-info text-blue-400 text-base mr-3"></i>
+            <span>Simula en vivo la desinfección UV-C, la remoción de manchas y el secado térmico de Ropten Clean.</span>
+          </div>
+
+          <button onclick="iniciarSimulacionLimpieza()" 
+                  id="btn-simular"
+                  class="btn-3d w-full bg-gradient-to-r from-teal-500 to-blue-600 hover:from-teal-400 hover:to-blue-500 text-slate-950 font-extrabold py-3.5 px-6 rounded-xl text-xs sm:text-sm shadow-lg flex items-center justify-center">
+            <i class="fa-solid fa-play mr-2"></i> Activar Ciclo de Limpieza Live
+          </button>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- PASOS DEL SERVICIO -->
+  <section class="py-12 px-4 max-w-6xl mx-auto relative z-10">
     <div class="text-center mb-10">
-      <h2 class="text-2xl sm:text-3xl font-extrabold text-white">Precios y Servicios</h2>
-      <p class="text-slate-400 text-xs sm:text-sm mt-1">Toca cualquier opción para solicitarla directamente por WhatsApp</p>
+      <h2 class="font-tech text-2xl sm:text-3xl font-extrabold text-white">TECNOLOGÍA DE TRATAMIENTO</h2>
+      <p class="text-slate-400 text-xs sm:text-sm mt-1">Cómo cuidamos tus pares y tu ropa paso a paso</p>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="glass-panel p-5 rounded-2xl text-center">
+        <div class="w-10 h-10 bg-blue-500/20 text-blue-400 rounded-xl flex items-center justify-center mx-auto mb-3 text-lg font-bold">1</div>
+        <h4 class="font-tech font-bold text-white text-sm mb-1">Diagnóstico Inicial</h4>
+        <p class="text-xs text-slate-400">Inspección de materiales, costuras y tipo de suciedad.</p>
+      </div>
+
+      <div class="glass-panel p-5 rounded-2xl text-center">
+        <div class="w-10 h-10 bg-teal-500/20 text-teal-400 rounded-xl flex items-center justify-center mx-auto mb-3 text-lg font-bold">2</div>
+        <h4 class="font-tech font-bold text-white text-sm mb-1">Lavado Especializado</h4>
+        <p class="text-xs text-slate-400">Champú de espuma neutra y detergente higiénico de ropa.</p>
+      </div>
+
+      <div class="glass-panel p-5 rounded-2xl text-center">
+        <div class="w-10 h-10 bg-indigo-500/20 text-indigo-400 rounded-xl flex items-center justify-center mx-auto mb-3 text-lg font-bold">3</div>
+        <h4 class="font-tech font-bold text-white text-sm mb-1">Sanitización UV-C</h4>
+        <p class="text-xs text-slate-400">Luz ultravioleta germicida que elimina el 99.9% de bacterias.</p>
+      </div>
+
+      <div class="glass-panel p-5 rounded-2xl text-center">
+        <div class="w-10 h-10 bg-green-500/20 text-green-400 rounded-xl flex items-center justify-center mx-auto mb-3 text-lg font-bold">4</div>
+        <h4 class="font-tech font-bold text-white text-sm mb-1">Secado & Perfumado</h4>
+        <p class="text-xs text-slate-400">Deshidratación térmica controlada sin deformar calzado o telas.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECCIÓN DE SERVICIOS Y PRECIOS -->
+  <section class="py-10 px-4 max-w-6xl mx-auto relative z-10">
+    <div class="text-center mb-10">
+      <h2 class="font-tech text-3xl sm:text-4xl font-extrabold text-white">TARIFAS Y SERVICIOS</h2>
+      <p class="text-slate-400 text-xs sm:text-sm mt-2">Selecciona un servicio para agendar por WhatsApp</p>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
       
-      <!-- COLUMNA 1: CUIDADO DE TENIS (EXO7) -->
-      <div class="bg-navy-card border border-navy rounded-2xl p-6 shadow-xl">
-        <div class="flex items-center space-x-3 mb-6 pb-4 border-b border-navy">
-          <div class="w-10 h-10 bg-blue-500/20 text-blue-400 rounded-xl flex items-center justify-center text-lg">
+      <!-- SERVICIO 1: TENIS -->
+      <div class="glass-panel rounded-3xl p-6 sm:p-8 relative overflow-hidden">
+        <div class="flex items-center space-x-4 mb-6 pb-4 border-b border-slate-800">
+          <div class="w-12 h-12 bg-blue-500/20 text-blue-400 rounded-2xl flex items-center justify-center text-2xl shadow-inner">
             <i class="fa-solid fa-shoe-prints"></i>
           </div>
           <div>
-            <h3 class="text-lg font-bold text-white">Limpieza de Tenis (Exo7™)</h3>
-            <p class="text-xs text-slate-400">Desinfección UV-C y secado térmico</p>
+            <h3 class="font-tech text-xl font-bold text-white">Limpieza de Tenis</h3>
+            <p class="text-xs text-slate-400">Tratamiento para Sneakers y Calzado Deportivo</p>
           </div>
         </div>
 
         <div class="space-y-4">
-          <!-- Opción 1 -->
-          <div class="p-4 bg-[#0b1526] rounded-xl border border-navy flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+          <div class="glass-panel p-4 rounded-2xl flex justify-between items-center transition hover:scale-[1.01]">
             <div>
               <h4 class="font-bold text-white text-sm">Limpieza Express</h4>
               <p class="text-xs text-slate-400">Capellada exterior, entresuela y agujetas.</p>
-              <span class="text-base font-extrabold text-blue-400 mt-1 block">$100 <span class="text-[10px] text-slate-400 font-normal">MXN</span></span>
+              <span class="font-tech text-lg font-bold text-blue-400 mt-1 block">$100 <span class="text-[10px] text-slate-500 font-normal">MXN</span></span>
             </div>
             <button onclick="enviarWhatsApp('Limpieza Express de Tenis', '$100 MXN')" 
-                    class="btn-interactivo w-full sm:w-auto bg-blue-600/20 hover:bg-blue-600 text-blue-400 hover:text-white border border-blue-500/40 text-xs font-bold px-4 py-2.5 rounded-lg flex items-center justify-center">
+                    class="btn-3d bg-blue-600/20 hover:bg-blue-600 text-blue-400 hover:text-white border border-blue-500/40 text-xs font-bold px-4 py-2.5 rounded-xl flex items-center">
               <i class="fa-brands fa-whatsapp text-sm mr-1.5"></i> Pedir
             </button>
           </div>
 
-          <!-- Opción 2 (Destacada) -->
-          <div class="p-4 bg-blue-950/40 rounded-xl border border-blue-500/50 relative flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-            <span class="absolute -top-2.5 right-3 bg-blue-600 text-[9px] font-bold text-white px-2 py-0.5 rounded-full uppercase">Más Popular</span>
+          <div class="glass-panel p-4 rounded-2xl flex justify-between items-center border-2 border-blue-500/80 bg-blue-950/30 relative transition hover:scale-[1.01]">
+            <span class="absolute -top-3 right-4 bg-gradient-to-r from-blue-600 to-teal-400 text-[9px] font-black text-slate-950 px-3 py-0.5 rounded-full uppercase tracking-wider">Recomendado</span>
             <div>
-              <h4 class="font-bold text-white text-sm">Limpieza Profunda Exo7™</h4>
-              <p class="text-xs text-slate-300">Interior, desinfección UV + Garantía Anti-Lluvia.</p>
-              <span class="text-base font-extrabold text-green-400 mt-1 block">$160 <span class="text-[10px] text-slate-400 font-normal">MXN</span></span>
+              <h4 class="font-bold text-white text-sm">Limpieza Profunda Ropten Clean</h4>
+              <p class="text-xs text-slate-300">Interior, desinfección UV-C + Garantía Anti-Lluvia.</p>
+              <span class="font-tech text-xl font-extrabold text-green-400 mt-1 block">$160 <span class="text-[10px] text-slate-400 font-normal">MXN</span></span>
             </div>
-            <button onclick="enviarWhatsApp('Limpieza Profunda Exo7 para Tenis', '$160 MXN')" 
-                    class="btn-interactivo w-full sm:w-auto bg-green-500 hover:bg-green-600 text-slate-950 font-bold text-xs px-4 py-2.5 rounded-lg flex items-center justify-center shadow-md">
+            <button onclick="enviarWhatsApp('Limpieza Profunda Ropten Clean para Tenis', '$160 MXN')" 
+                    class="btn-3d bg-green-500 hover:bg-green-400 text-slate-950 font-bold text-xs px-4 py-2.5 rounded-xl shadow-lg shadow-green-500/20 flex items-center">
               <i class="fa-brands fa-whatsapp text-sm mr-1.5"></i> Pedir
             </button>
           </div>
 
-          <!-- Opción 3 -->
-          <div class="p-4 bg-[#0b1526] rounded-xl border border-navy flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+          <div class="glass-panel p-4 rounded-2xl flex justify-between items-center transition hover:scale-[1.01]">
             <div>
               <h4 class="font-bold text-white text-sm">Gamuza, Ante & Piel Premium</h4>
-              <p class="text-xs text-slate-400">Tratamiento delicado a mano, peinado y nutrición.</p>
-              <span class="text-base font-extrabold text-blue-400 mt-1 block">$220 <span class="text-[10px] text-slate-400 font-normal">MXN</span></span>
+              <p class="text-xs text-slate-400">Nutrición de piel, peinado e hidratación especial.</p>
+              <span class="font-tech text-lg font-bold text-blue-400 mt-1 block">$220 <span class="text-[10px] text-slate-500 font-normal">MXN</span></span>
             </div>
-            <button onclick="enviarWhatsApp('Limpieza de Tenis Premium (Gamuza/Piel)', '$220 MXN')" 
-                    class="btn-interactivo w-full sm:w-auto bg-blue-600/20 hover:bg-blue-600 text-blue-400 hover:text-white border border-blue-500/40 text-xs font-bold px-4 py-2.5 rounded-lg flex items-center justify-center">
+            <button onclick="enviarWhatsApp('Limpieza Premium Gamuza/Piel', '$220 MXN')" 
+                    class="btn-3d bg-blue-600/20 hover:bg-blue-600 text-blue-400 hover:text-white border border-blue-500/40 text-xs font-bold px-4 py-2.5 rounded-xl flex items-center">
               <i class="fa-brands fa-whatsapp text-sm mr-1.5"></i> Pedir
             </button>
           </div>
         </div>
       </div>
 
-      <!-- COLUMNA 2: LAVANDERÍA DE ROPA -->
-      <div class="bg-navy-card border border-navy rounded-2xl p-6 shadow-xl">
-        <div class="flex items-center space-x-3 mb-6 pb-4 border-b border-navy">
-          <div class="w-10 h-10 bg-teal-500/20 text-teal-400 rounded-xl flex items-center justify-center text-lg">
+      <!-- SERVICIO 2: ROPA Y BLANCOS -->
+      <div class="glass-panel rounded-3xl p-6 sm:p-8 relative overflow-hidden">
+        <div class="flex items-center space-x-4 mb-6 pb-4 border-b border-slate-800">
+          <div class="w-12 h-12 bg-teal-500/20 text-teal-400 rounded-2xl flex items-center justify-center text-2xl shadow-inner">
             <i class="fa-solid fa-shirt"></i>
           </div>
           <div>
-            <h3 class="text-lg font-bold text-white">Lavandería de Ropa & Blancos</h3>
-            <p class="text-xs text-slate-400">Lavado, secado y doblado impecable</p>
+            <h3 class="font-tech text-xl font-bold text-white">Lavandería & Blancos</h3>
+            <p class="text-xs text-slate-400">Cuidado textil, suavizante y doblado</p>
           </div>
         </div>
 
         <div class="space-y-4">
-          <!-- Opción 1 -->
-          <div class="p-4 bg-[#0b1526] rounded-xl border border-navy flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+          <div class="glass-panel p-4 rounded-2xl flex justify-between items-center transition hover:scale-[1.01]">
             <div>
               <h4 class="font-bold text-white text-sm">Ropa General (Por Kilo)</h4>
-              <p class="text-xs text-slate-400">Lavado, suavizante y doblado (Mín. 4 kg).</p>
-              <span class="text-base font-extrabold text-teal-400 mt-1 block">$20 <span class="text-[10px] text-slate-400 font-normal">/kg</span></span>
+              <p class="text-xs text-slate-400">Lavado higiénico y aroma fresco (Mín. 4 kg).</p>
+              <span class="font-tech text-lg font-bold text-teal-400 mt-1 block">$20 <span class="text-[10px] text-slate-500 font-normal">/kg</span></span>
             </div>
-            <button onclick="enviarWhatsApp('Servicio de Lavandería por Kilo', '$20/kg')" 
-                    class="btn-interactivo w-full sm:w-auto bg-teal-600/20 hover:bg-teal-600 text-teal-300 hover:text-white border border-teal-500/40 text-xs font-bold px-4 py-2.5 rounded-lg flex items-center justify-center">
+            <button onclick="enviarWhatsApp('Lavandería de Ropa por Kilo', '$20/kg')" 
+                    class="btn-3d bg-teal-600/20 hover:bg-teal-600 text-teal-300 hover:text-white border border-teal-500/40 text-xs font-bold px-4 py-2.5 rounded-xl flex items-center">
               <i class="fa-brands fa-whatsapp text-sm mr-1.5"></i> Pedir
             </button>
           </div>
 
-          <!-- Opción 2 -->
-          <div class="p-4 bg-[#0b1526] rounded-xl border border-navy flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+          <div class="glass-panel p-4 rounded-2xl flex justify-between items-center transition hover:scale-[1.01]">
             <div>
               <h4 class="font-bold text-white text-sm">Edredón Individual / Matrimonial</h4>
-              <p class="text-xs text-slate-400">Lavado e higienización profunda por pieza.</p>
-              <span class="text-base font-extrabold text-teal-400 mt-1 block">$130 <span class="text-[10px] text-slate-400 font-normal">MXN</span></span>
+              <p class="text-xs text-slate-400">Lavado e higienización por pieza.</p>
+              <span class="font-tech text-lg font-bold text-teal-400 mt-1 block">$130 <span class="text-[10px] text-slate-500 font-normal">MXN</span></span>
             </div>
             <button onclick="enviarWhatsApp('Lavado de Edredón Individual/Matrimonial', '$130 MXN')" 
-                    class="btn-interactivo w-full sm:w-auto bg-teal-600/20 hover:bg-teal-600 text-teal-300 hover:text-white border border-teal-500/40 text-xs font-bold px-4 py-2.5 rounded-lg flex items-center justify-center">
+                    class="btn-3d bg-teal-600/20 hover:bg-teal-600 text-teal-300 hover:text-white border border-teal-500/40 text-xs font-bold px-4 py-2.5 rounded-xl flex items-center">
               <i class="fa-brands fa-whatsapp text-sm mr-1.5"></i> Pedir
             </button>
           </div>
 
-          <!-- Opción 3 -->
-          <div class="p-4 bg-[#0b1526] rounded-xl border border-navy flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+          <div class="glass-panel p-4 rounded-2xl flex justify-between items-center transition hover:scale-[1.01]">
             <div>
               <h4 class="font-bold text-white text-sm">Edredón King Size / Queen</h4>
-              <p class="text-xs text-slate-400">Tratamiento de gran volumen con secado completo.</p>
-              <span class="text-base font-extrabold text-teal-400 mt-1 block">$170 <span class="text-[10px] text-slate-400 font-normal">MXN</span></span>
+              <p class="text-xs text-slate-400">Tratamiento de gran volumen e impecable secado.</p>
+              <span class="font-tech text-lg font-bold text-teal-400 mt-1 block">$170 <span class="text-[10px] text-slate-500 font-normal">MXN</span></span>
             </div>
-            <button onclick="enviarWhatsApp('Lavado de Edredón King Size / Queen', '$170 MXN')" 
-                    class="btn-interactivo w-full sm:w-auto bg-teal-600/20 hover:bg-teal-600 text-teal-300 hover:text-white border border-teal-500/40 text-xs font-bold px-4 py-2.5 rounded-lg flex items-center justify-center">
+            <button onclick="enviarWhatsApp('Lavado de Edredón King Size/Queen', '$170 MXN')" 
+                    class="btn-3d bg-teal-600/20 hover:bg-teal-600 text-teal-300 hover:text-white border border-teal-500/40 text-xs font-bold px-4 py-2.5 rounded-xl flex items-center">
               <i class="fa-brands fa-whatsapp text-sm mr-1.5"></i> Pedir
             </button>
           </div>
@@ -209,102 +391,223 @@
     </div>
   </section>
 
-  <!-- GARANTÍAS Y BENEFICIOS CLAVE -->
-  <section class="py-10 px-4 bg-[#132238]/50 border-y border-navy">
-    <div class="max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
+  <!-- GARANTÍAS HIGHLIGHTS -->
+  <section class="py-10 px-4 max-w-6xl mx-auto relative z-10">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
       
-      <div class="p-4">
-        <div class="w-12 h-12 bg-blue-500/10 text-blue-400 rounded-full flex items-center justify-center mx-auto mb-3 text-xl">
+      <div class="glass-panel p-6 rounded-2xl text-center">
+        <div class="w-12 h-12 bg-blue-500/10 text-blue-400 rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl">
           <i class="fa-solid fa-cloud-showers-heavy"></i>
         </div>
-        <h4 class="font-bold text-white text-sm mb-1">Garantía Anti-Lluvia 48 Hrs</h4>
-        <p class="text-xs text-slate-400">Si te llueve en las primeras 48 horas tras retirar tus tenis, te damos un retoque express totalmente gratis.</p>
+        <h4 class="font-tech font-bold text-white mb-2">Garantía Anti-Lluvia 48 Hrs</h4>
+        <p class="text-xs text-slate-400">Si te llueve en las primeras 48 horas tras retirar tus tenis, te damos un retoque express gratis.</p>
       </div>
 
-      <div class="p-4">
-        <div class="w-12 h-12 bg-teal-500/10 text-teal-400 rounded-full flex items-center justify-center mx-auto mb-3 text-xl">
-          <i class="fa-solid fa-clock font-bold"></i>
+      <div class="glass-panel p-6 rounded-2xl text-center">
+        <div class="w-12 h-12 bg-teal-500/10 text-teal-400 rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl">
+          <i class="fa-solid fa-clock"></i>
         </div>
-        <h4 class="font-bold text-white text-sm mb-1">Entrega Rápida (24 a 36 hrs)</h4>
-        <p class="text-xs text-slate-400">Listos mucho más rápido que en cualquier lavandería convencional sin comprometer la calidad.</p>
+        <h4 class="font-tech font-bold text-white mb-2">Entrega Agilizada</h4>
+        <p class="text-xs text-slate-400">Procesamiento ultra rápido con estándares de alta calidad técnica.</p>
       </div>
 
-      <div class="p-4">
-        <div class="w-12 h-12 bg-purple-500/10 text-purple-400 rounded-full flex items-center justify-center mx-auto mb-3 text-xl">
+      <div class="glass-panel p-6 rounded-2xl text-center">
+        <div class="w-12 h-12 bg-purple-500/10 text-purple-400 rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl">
           <i class="fa-solid fa-shield-virus"></i>
         </div>
-        <h4 class="font-bold text-white text-sm mb-1">Desinfección Fotónica UV-C</h4>
-        <p class="text-xs text-slate-400">Eliminamos el 99.9% de hongos y bacterias causantes del mal olor en tu calzado.</p>
+        <h4 class="font-tech font-bold text-white mb-2">Sanitización Germicida</h4>
+        <p class="text-xs text-slate-400">Eliminación efectiva de microorganismos causantes del mal olor.</p>
       </div>
 
     </div>
   </section>
 
-  <!-- PROCESO FÁCIL EN 3 PASOS -->
-  <section class="py-12 px-4 max-w-4xl mx-auto text-center">
-    <h2 class="text-xl sm:text-2xl font-extrabold text-white mb-8">¿Cómo funciona el servicio?</h2>
-    
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
-      <div class="bg-navy-card p-5 rounded-2xl border border-navy">
-        <span class="w-8 h-8 bg-blue-600 text-white font-extrabold rounded-full flex items-center justify-center mx-auto mb-3 text-xs">1</span>
-        <h4 class="font-bold text-white text-sm mb-1">Escríbenos</h4>
-        <p class="text-xs text-slate-400">Toca cualquier botón para abrir WhatsApp. Si son tenis, puedes enviarnos foto del estado actual.</p>
-      </div>
-
-      <div class="bg-navy-card p-5 rounded-2xl border border-navy">
-        <span class="w-8 h-8 bg-blue-600 text-white font-extrabold rounded-full flex items-center justify-center mx-auto mb-3 text-xs">2</span>
-        <h4 class="font-bold text-white text-sm mb-1">Entrega tu Carga</h4>
-        <p class="text-xs text-slate-400">Visítanos en nuestro taller base o coordinamos recepción de tu ropa/tenis en Atlixco.</p>
-      </div>
-
-      <div class="bg-navy-card p-5 rounded-2xl border border-navy">
-        <span class="w-8 h-8 bg-blue-600 text-white font-extrabold rounded-full flex items-center justify-center mx-auto mb-3 text-xs">3</span>
-        <h4 class="font-bold text-white text-sm mb-1">¡Estrena de Nuevo!</h4>
-        <p class="text-xs text-slate-400">Te enviamos aviso a WhatsApp con foto comparativa cuando tus prendas/tenis estén listos.</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- PIE DE PÁGINA Y CONTACTO -->
-  <footer class="py-10 px-4 bg-[#070e1a] border-t border-navy text-center">
+  <!-- FOOTER -->
+  <footer class="py-12 px-4 border-t border-slate-800 text-center relative z-10 glass-panel mt-12">
     <div class="max-w-4xl mx-auto">
-      <div class="mb-4">
-        <span class="text-2xl font-black text-white">Ropten <span class="text-blue-400">Clean</span></span>
-        <p class="text-xs text-slate-400 mt-1">Servicio Integral de Lavandería & Cuidado de Calzado Exo7™</p>
-      </div>
+      <span class="font-tech text-2xl font-black text-white block">ROPTEN <span class="text-blue-400">CLEAN</span></span>
+      <p class="text-xs text-slate-400 mt-2">Limpieza Profesional: Ropa y Tenis en Atlixco, Puebla</p>
 
-      <button onclick="enviarWhatsApp('Información General')" 
-              class="btn-interactivo bg-green-500 hover:bg-green-600 text-slate-950 font-bold px-6 py-3 rounded-xl text-sm my-4 shadow-lg shadow-green-500/20 inline-flex items-center">
-        <i class="fa-brands fa-whatsapp text-lg mr-2"></i> WhatsApp: 244 315 3421
+      <button onclick="enviarWhatsApp('Consulta Rápida')" 
+              class="btn-3d bg-green-500 hover:bg-green-400 text-slate-950 font-extrabold px-8 py-3.5 rounded-2xl text-sm my-6 inline-flex items-center shadow-lg shadow-green-500/20">
+        <i class="fa-brands fa-whatsapp text-xl mr-2"></i> WhatsApp: 244 315 3421
       </button>
 
-      <p class="text-xs text-slate-500 mt-4"><i class="fa-solid fa-location-dot text-red-500 mr-1"></i> Atlixco, Puebla, México</p>
-      <p class="text-[11px] text-slate-600 mt-1">© 2026 Ropten Clean. Todos los derechos reservados.</p>
+      <p class="text-xs text-slate-500"><i class="fa-solid fa-location-dot text-red-500 mr-1"></i> Atlixco, Puebla, México</p>
+      <p class="text-[10px] text-slate-600 mt-2">© 2026 Ropten Clean. Todos los derechos reservados.</p>
     </div>
   </footer>
 
   <!-- BOTÓN FLOTANTE WHATSAPP -->
-  <button onclick="enviarWhatsApp('Consulta Rápida')" 
-          class="whatsapp-pulse btn-interactivo fixed bottom-5 right-5 bg-green-500 text-slate-950 w-14 h-14 rounded-full flex items-center justify-center text-3xl shadow-2xl z-50 hover:bg-green-400">
+  <button onclick="enviarWhatsApp('Consulta Flotante')" 
+          class="whatsapp-float btn-3d fixed bottom-6 right-6 bg-green-500 text-slate-950 w-16 h-16 rounded-full flex items-center justify-center text-3xl z-50 shadow-2xl">
     <i class="fa-brands fa-whatsapp"></i>
   </button>
 
-  <!-- SCRIPT INTERACTIVO DE REDIRECCIÓN A WHATSAPP -->
+  <!-- SCRIPTS Y LÓGICA DE ANIMACIONES INTERACTIVAS -->
   <script>
+    // 1. FUNCIÓN DE ENVÍO DIRECTO A WHATSAPP
     function enviarWhatsApp(servicio, precio = '') {
       const telefono = "522443153421";
-      let texto = `Hola Ropten Clean 👋, me interesa agendar el servicio: *${servicio}*`;
-      
+      let texto = `Hola Ropten Clean 👋, me interesa contratar: *${servicio}*`;
       if (precio !== '') {
         texto += ` (${precio})`;
       }
-      
-      texto += `. ¿Me podrías dar información para realizar el pedido?`;
+      texto += `. ¿Me podrías brindar información para agendar mi servicio?`;
 
       const url = `https://wa.me/${telefono}?text=${encodeURIComponent(texto)}`;
       window.open(url, '_blank');
     }
+
+    // 2. SLIDER ANTES / DESPUÉS INTERACTIVO (DESLIZADOR DE LIMPIEZA)
+    const sliderContainer = document.getElementById('slider-container');
+    const afterLayer = document.getElementById('ba-after-layer');
+    const handle = document.getElementById('ba-handle');
+    let isDragging = false;
+
+    function moveSlider(x) {
+      const rect = sliderContainer.getBoundingClientRect();
+      let pos = ((x - rect.left) / rect.width) * 100;
+      if (pos < 5) pos = 5;
+      if (pos > 95) pos = 95;
+
+      afterLayer.style.width = `${pos}%`;
+      handle.style.left = `${pos}%`;
+    }
+
+    sliderContainer.addEventListener('mousedown', () => isDragging = true);
+    window.addEventListener('mouseup', () => isDragging = false);
+    sliderContainer.addEventListener('mousemove', (e) => {
+      if (isDragging) moveSlider(e.clientX);
+    });
+
+    // Touch events para celulares
+    sliderContainer.addEventListener('touchstart', () => isDragging = true);
+    window.addEventListener('touchend', () => isDragging = false);
+    sliderContainer.addEventListener('touchmove', (e) => {
+      if (isDragging && e.touches[0]) moveSlider(e.touches[0].clientX);
+    });
+
+    // 3. SIMULACIÓN INTERACTIVA DE LIMPIEZA EN TIEMPO REAL
+    let animando = false;
+    function iniciarSimulacionLimpieza() {
+      if (animando) return;
+      animando = true;
+
+      const btn = document.getElementById('btn-simular');
+      const progress = document.getElementById('clean-progress');
+      const badge = document.getElementById('status-badge');
+      const percentText = document.getElementById('step-percent');
+      const labelText = document.getElementById('step-label');
+      const descText = document.getElementById('step-description');
+
+      btn.disabled = true;
+      btn.classList.add('opacity-50');
+
+      const pasos = [
+        { p: 25, label: "Paso 1: Aplicación de Espuma Activa", badge: "LAVANDO", badgeBg: "bg-blue-500", desc: "💧 Penetrando fibras y aflojando suciedad atrapada en textiles y suelas.", sliderVal: 30 },
+        { p: 50, label: "Paso 2: Desinfección Ultrasonido y UV-C", badge: "DESINFECTANDO", badgeBg: "bg-purple-500", desc: "⚡ Eliminación de gérmenes y bacterias mediante luz fotónica germicida.", sliderVal: 60 },
+        { p: 75, label: "Paso 3: Secado Térmico Controlado", badge: "SECANDO", badgeBg: "bg-amber-500", desc: "🔥 Deshidratación progresiva sin dañar las fibras sintéticas ni adhesivos.", sliderVal: 85 },
+        { p: 100, label: "Paso 4: Nutrición y Perfumado Impecable", badge: "IMPECABLE ✨", badgeBg: "bg-green-500", desc: "🌟 ¡Calzado y ropa 100% limpios, desinfectados y listos para lucir!", sliderVal: 95 }
+      ];
+
+      let stepIndex = 0;
+      const interval = setInterval(() => {
+        if (stepIndex < pasos.length) {
+          const paso = pasos[stepIndex];
+          progress.style.width = `${paso.p}%`;
+          percentText.innerText = `${paso.p}%`;
+          labelText.innerText = paso.label;
+          descText.innerHTML = `<i class="fa-solid fa-sparkles text-teal-400 text-base mr-3"></i><span>${paso.desc}</span>`;
+          badge.innerText = paso.badge;
+          badge.className = `text-[10px] font-mono px-2.5 py-1 rounded-md text-slate-950 font-bold ${paso.badgeBg}`;
+          
+          // Anima el slider automáticamente durante el ciclo
+          afterLayer.style.width = `${paso.sliderVal}%`;
+          handle.style.left = `${paso.sliderVal}%`;
+
+          stepIndex++;
+        } else {
+          clearInterval(interval);
+          animando = false;
+          btn.disabled = false;
+          btn.classList.remove('opacity-50');
+          btn.innerHTML = `<i class="fa-solid fa-rotate-right mr-2"></i> Repetir Simulación`;
+        }
+      }, 1600);
+    }
+
+    // 4. ANIMACIÓN 3D CON THREE.JS (FONDO CON BURBUJAS Y ANILLOS ULTRASÓNICOS)
+    const canvas = document.getElementById('canvas-3d');
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
+
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+    // GEOMETRÍA 3D DE ONDAS DE LIMPIEZA
+    const ringGeo = new THREE.TorusGeometry(3, 0.05, 16, 100);
+    const ringMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, wireframe: true, transparent: true, opacity: 0.15 });
+    const ringMesh = new THREE.Mesh(ringGeo, ringMat);
+    scene.add(ringMesh);
+
+    // PARTÍCULAS / BURBUJAS DE JABÓN FLOTANTES
+    const count = 250;
+    const positions = new Float32Array(count * 3);
+    const scales = new Float32Array(count);
+
+    for (let i = 0; i < count * 3; i += 3) {
+      positions[i] = (Math.random() - 0.5) * 16;
+      positions[i + 1] = (Math.random() - 0.5) * 16;
+      positions[i + 2] = (Math.random() - 0.5) * 16;
+    }
+
+    const pGeo = new THREE.BufferGeometry();
+    pGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+    const pMat = new THREE.PointsMaterial({
+      size: 0.05,
+      color: 0x2dd4bf,
+      transparent: true,
+      opacity: 0.6
+    });
+
+    const particles = new THREE.Points(pGeo, pMat);
+    scene.add(particles);
+
+    camera.position.z = 6;
+
+    // MOVIMIENTO REACCIONANDO AL CURSOR
+    let mouseX = 0, mouseY = 0;
+    window.addEventListener('mousemove', (e) => {
+      mouseX = (e.clientX / window.innerWidth - 0.5) * 0.4;
+      mouseY = (e.clientY / window.innerHeight - 0.5) * 0.4;
+    });
+
+    function render3D() {
+      requestAnimationFrame(render3D);
+
+      ringMesh.rotation.x += 0.002;
+      ringMesh.rotation.y += 0.004;
+
+      particles.rotation.y -= 0.001;
+      particles.rotation.x += 0.0005;
+
+      camera.position.x += (mouseX - camera.position.x) * 0.04;
+      camera.position.y += (-mouseY - camera.position.y) * 0.04;
+      camera.lookAt(scene.position);
+
+      renderer.render(scene, camera);
+    }
+    render3D();
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
   </script>
 
 </body>
-</html>
+        </html>
